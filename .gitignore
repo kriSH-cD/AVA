@@ -1,0 +1,30 @@
+# Environment
+.env
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Temporary files
+temp/
+*.mp3
+*.wav
+
+# Model files
+models/*.pkl
+models/*.joblib
+
+# Documentation (excluded as per user request)
+*.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
