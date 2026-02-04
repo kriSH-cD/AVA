@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from app.config import settings
@@ -27,6 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files for web interface
+from pathlib import Path
+static_dir = Path(__file__).parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 # Initialize components
 audio_processor = AudioProcessor()
 feature_extractor = FeatureExtractor()
@@ -40,6 +47,7 @@ async def root():
         "name": "Voice Detection API",
         "version": "1.0.0",
         "status": "operational",
+        "web_interface": "/static/index.html",
         "endpoints": {
             "detection": "/api/voice-detection",
             "health": "/health"
@@ -104,6 +112,9 @@ async def detect_voice(
         # Step 3: Extract acoustic features
         features = feature_extractor.extract_features(waveform, sr)
         
+        # Step 3.5: Detect language
+        language = feature_extractor.detect_language(waveform, sr)
+        
         # Step 4: Convert to feature vector
         feature_vector = feature_extractor.get_feature_vector(features)
         
@@ -122,7 +133,8 @@ async def detect_voice(
         response = VoiceDetectionResponse(
             classification=classification,
             confidence=confidence,
-            explanation=explanation
+            explanation=explanation,
+            language=language
         )
         
         return response.to_dict()

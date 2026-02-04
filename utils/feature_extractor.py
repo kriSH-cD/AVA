@@ -3,6 +3,11 @@ import numpy as np
 import librosa
 from typing import Dict, List
 from app.config import settings
+try:
+    from langdetect import detect, LangDetectException
+    LANGDETECT_AVAILABLE = True
+except ImportError:
+    LANGDETECT_AVAILABLE = False
 
 
 class FeatureExtractor:
@@ -193,3 +198,23 @@ class FeatureExtractor:
         ]
         
         return np.array([features.get(f, 0.0) for f in feature_order])
+    
+    def detect_language(self, waveform: np.ndarray, sr: int) -> str:
+        """
+        Language detection placeholder.
+        
+        Note: Accurate language detection requires speech-to-text models.
+        The model is language-agnostic and works across all languages.
+        
+        Args:
+            waveform: Audio waveform
+            sr: Sample rate
+            
+        Returns:
+            'multilingual' - indicating the model works across languages
+        """
+        # The voice detection model is language-agnostic
+        # It analyzes acoustic features that work across all languages
+        return "multilingual"
+
+

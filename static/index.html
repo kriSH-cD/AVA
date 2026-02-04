@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVA Voice Detection API - Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: border 0.3s;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+
+        .result-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .result-detail {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .confidence-bar {
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .language-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎙️ AVA Voice Detection</h1>
+        <p class="subtitle">Language-Agnostic AI Voice Detection API</p>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <p><strong>Click to upload</strong> or drag and drop</p>
+            <p style="font-size: 12px; color: #999; margin-top: 5px;">MP3, WAV, M4A files supported</p>
+            <input type="file" id="fileInput" accept="audio/*">
+        </div>
+
+        <input type="text" class="api-key-input" id="apiKey" placeholder="Enter API Key (e.g., AVA-2026-XXXXXX)"
+            value="AVA-2026-910728">
+
+        <button class="btn" id="analyzeBtn" disabled>Analyze Voice</button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing audio...</p>
+        </div>
+
+        <div class="result" id="result">
+            <div class="result-label">Classification</div>
+            <div class="result-value" id="classification"></div>
+
+            <div class="result-label">Model Confidence</div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidenceFill"></div>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                <em>Confidence represents the model's certainty in its prediction (0-100%)</em>
+            </p>
+
+            <div class="result-label">Language Support</div>
+            <span class="language-badge" id="language"></span>
+            <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                <em>Model is language-agnostic and works across all languages</em>
+            </p>
+
+            <div class="result-detail">
+                <strong>Explanation:</strong><br>
+                <span id="explanation"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const apiKeyInput = document.getElementById('apiKey');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        let selectedFile = null;
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                updateUI();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedFile = e.target.files[0];
+                updateUI();
+            }
+        });
+
+        function updateUI() {
+            if (selectedFile) {
+                uploadArea.querySelector('p').innerHTML = `<strong>Selected:</strong> ${selectedFile.name}`;
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile || !apiKeyInput.value) {
+                alert('Please select a file and enter API key');
+                return;
+            }
+
+            // Show loading
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            analyzeBtn.disabled = true;
+
+            try {
+                // Convert file to base64
+                const base64Audio = await fileToBase64(selectedFile);
+
+                // Call API
+                const response = await fetch('http://localhost:8000/api/voice-detection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKeyInput.value
+                    },
+                    body: JSON.stringify({
+                        audio_base64: base64Audio
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    displayError(data.detail || 'Unknown error');
+                }
+            } catch (error) {
+                displayError(error.message);
+            } finally {
+                loading.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function displayResult(data) {
+            result.className = 'result success';
+            result.style.display = 'block';
+
+            const classificationEl = document.getElementById('classification');
+            const confidenceFillEl = document.getElementById('confidenceFill');
+            const languageEl = document.getElementById('language');
+            const explanationEl = document.getElementById('explanation');
+
+            if (classificationEl) {
+                classificationEl.textContent = data.classification;
+                classificationEl.style.color =
+                    data.classification === 'AI_GENERATED' ? '#dc3545' : '#28a745';
+            }
+
+            if (confidenceFillEl) {
+                const confidence = Math.round(data.confidence * 100);
+                confidenceFillEl.style.width = confidence + '%';
+                confidenceFillEl.textContent = confidence + '%';
+            }
+
+            if (languageEl) {
+                languageEl.textContent = data.language ? data.language.toUpperCase() : 'UNKNOWN';
+            }
+
+            if (explanationEl) {
+                explanationEl.textContent = data.explanation || 'No explanation available';
+            }
+        }
+
+        function displayError(message) {
+            result.className = 'result error';
+            result.style.display = 'block';
+
+            // Create error content without destroying existing structure
+            const errorHTML = `
+                <div class="result-label">Error</div>
+                <div class="result-value" style="color: #dc3545; font-size: 18px;">
+                    ${message}
+                </div>
+            `;
+            result.innerHTML = errorHTML;
+        }
+    </script>
+</body>
+
+</html>

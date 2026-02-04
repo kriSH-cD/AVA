@@ -16,9 +16,6 @@ temp/
 models/*.pkl
 models/*.joblib
 
-# Documentation (excluded as per user request)
-*.md
-
 # IDE
 .vscode/
 .idea/

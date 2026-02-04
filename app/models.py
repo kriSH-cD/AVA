@@ -32,13 +32,15 @@ class VoiceDetectionResponse:
     classification: str  # "AI_GENERATED" or "HUMAN"
     confidence: float
     explanation: str
+    language: str = "unknown"  # Detected language
     
     def to_dict(self) -> dict:
         """Convert to dictionary."""
         return {
             "classification": self.classification,
             "confidence": round(self.confidence, 2),
-            "explanation": self.explanation
+            "explanation": self.explanation,
+            "language": self.language
         }
 
 

@@ -1,17 +1,17 @@
-"""Audio processing utilities for converting and loading audio files."""
+"""Audio processing utilities using ffmpeg for conversion."""
 import base64
 import os
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Tuple
 import numpy as np
-import librosa
 import soundfile as sf
 from app.config import settings
 
 
 class AudioProcessor:
-    """Handle audio file conversion and loading."""
+    """Handle audio file conversion and loading using ffmpeg."""
     
     def __init__(self):
         """Initialize audio processor."""
@@ -21,10 +21,10 @@ class AudioProcessor:
     
     def base64_to_audio(self, base64_string: str) -> Tuple[np.ndarray, int]:
         """
-        Convert base64 encoded MP3 to audio waveform.
+        Convert base64 encoded audio to waveform using ffmpeg.
         
         Args:
-            base64_string: Base64 encoded MP3 audio
+            base64_string: Base64 encoded audio (MP3, WAV, etc.)
             
         Returns:
             Tuple of (waveform array, sample rate)
@@ -36,22 +36,36 @@ class AudioProcessor:
             # Decode base64 to bytes
             audio_bytes = base64.b64decode(base64_string)
             
-            # Create temporary MP3 file
+            # Create temporary input file
             with tempfile.NamedTemporaryFile(
                 suffix='.mp3',
                 dir=self.temp_dir,
                 delete=False
-            ) as temp_mp3:
-                temp_mp3.write(audio_bytes)
-                temp_mp3_path = temp_mp3.name
+            ) as temp_input:
+                temp_input.write(audio_bytes)
+                input_path = temp_input.name
+            
+            # Create temporary output WAV file
+            with tempfile.NamedTemporaryFile(
+                suffix='.wav',
+                dir=self.temp_dir,
+                delete=False
+            ) as temp_output:
+                output_path = temp_output.name
             
             try:
-                # Load audio with librosa
-                waveform, sr = librosa.load(
-                    temp_mp3_path,
-                    sr=self.sample_rate,
-                    mono=True
-                )
+                # Use ffmpeg to convert to WAV
+                subprocess.run([
+                    'ffmpeg',
+                    '-i', input_path,
+                    '-ar', str(self.sample_rate),  # Set sample rate
+                    '-ac', '1',  # Convert to mono
+                    '-y',  # Overwrite output file
+                    output_path
+                ], check=True, capture_output=True, text=True)
+                
+                # Load the WAV file with soundfile
+                waveform, sr = sf.read(output_path, dtype='float32')
                 
                 # Validate audio length
                 duration = len(waveform) / sr
@@ -68,34 +82,41 @@ class AudioProcessor:
                 return waveform, sr
                 
             finally:
-                # Clean up temporary file
-                if os.path.exists(temp_mp3_path):
-                    os.unlink(temp_mp3_path)
+                # Clean up temporary files
+                for path in [input_path, output_path]:
+                    if os.path.exists(path):
+                        try:
+                            os.unlink(path)
+                        except:
+                            pass
                     
         except base64.binascii.Error:
             raise ValueError("Invalid base64 encoding")
+        except subprocess.CalledProcessError as e:
+            raise ValueError(f"Failed to convert audio: {e.stderr}")
         except Exception as e:
             raise ValueError(f"Failed to process audio: {str(e)}")
     
     def validate_audio_format(self, audio_bytes: bytes) -> bool:
         """
-        Validate that the audio is in MP3 format.
+        Validate that the audio is in a supported format.
         
         Args:
             audio_bytes: Raw audio bytes
             
         Returns:
-            True if valid MP3, False otherwise
+            True if valid format, False otherwise
         """
-        # Check MP3 magic numbers
-        mp3_signatures = [
-            b'\xff\xfb',  # MPEG-1 Layer 3
-            b'\xff\xf3',  # MPEG-2 Layer 3
-            b'\xff\xf2',  # MPEG-2.5 Layer 3
-            b'ID3'        # ID3 tag
+        # Check common audio file signatures
+        signatures = [
+            b'\\xff\\xfb',  # MP3
+            b'\\xff\\xf3',  # MP3
+            b'ID3',        # MP3 with ID3
+            b'RIFF',       # WAV
+            b'fLaC',       # FLAC
         ]
         
-        return any(audio_bytes.startswith(sig) for sig in mp3_signatures)
+        return any(audio_bytes.startswith(sig) for sig in signatures)
     
     def cleanup_temp_files(self, max_age_hours: int = 1):
         """
