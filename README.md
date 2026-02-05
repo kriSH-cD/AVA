@@ -263,7 +263,85 @@ python scripts/train_model.py
 
 ## 🚢 Deployment
 
-### Railway Deployment
+### � GitHub Container Registry (GHCR)
+
+**Pre-built multi-platform image available!**
+
+```bash
+# Pull the image (works on Intel, AMD, and ARM servers)
+docker pull ghcr.io/zaheer-zee/ava-ml-api:latest
+
+# Run it
+docker run -d -p 8000:8000 --env-file .env ghcr.io/zaheer-zee/ava-ml-api:latest
+```
+
+**Platforms**: linux/amd64, linux/arm64
+**Auto-built**: Every push to main branch
+**Perfect for**: College domains, cloud deployment, production use
+
+📖 **Full deployment guide**: See [DEPLOYMENT.md](file:///Users/zaheer/Desktop/AVA/voice-detection-api/DEPLOYMENT.md)
+
+---
+
+### �🐳 Docker Deployment (Recommended)
+
+The easiest way to deploy the API is using Docker. All dependencies (including ffmpeg) are included in the container.
+
+#### Option 1: Docker Compose (Easiest)
+
+```bash
+# Build and run
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+The API will be available at `http://localhost:8000`
+
+#### Option 2: Docker CLI
+
+```bash
+# Build the image
+docker build -t voice-detection-api:latest .
+
+# Run the container
+docker run -d \
+  -p 8000:8000 \
+  --name voice-api \
+  --env-file .env \
+  voice-detection-api:latest
+
+# Check logs
+docker logs -f voice-api
+
+# Stop and remove
+docker stop voice-api && docker rm voice-api
+```
+
+#### Environment Variables for Docker
+
+Create a `.env` file:
+```env
+API_KEY=AVA-2026-YOUR-KEY
+HOST=0.0.0.0
+PORT=8000
+```
+
+#### Docker Image Details
+
+- **Base Image**: Python 3.10 slim
+- **System Dependencies**: ffmpeg, libsndfile1
+- **Size**: ~800MB (optimized)
+- **Security**: Runs as non-root user
+- **Health Check**: Built-in endpoint monitoring
+
+---
+
+### ☁️ Railway Deployment
 
 1. **Push to GitHub**:
 ```bash

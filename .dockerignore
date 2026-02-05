@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Training data (too large for container)
+training_data/
+
+# Temporary files
+temp/
+*.tmp
+*.log
+
+# Development files
+.env.example
+test_*.py
+quick_test.py
+generate_test_audio.py
+check_voices.py
+
+# Documentation
+README.md
+*.md
+!requirements.txt
+
+# Scripts
+scripts/
+
+# Other
+.DS_Store
+Thumbs.db
+voices.txt
