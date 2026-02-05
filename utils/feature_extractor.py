@@ -9,6 +9,12 @@ try:
 except ImportError:
     LANGDETECT_AVAILABLE = False
 
+try:
+    import speech_recognition
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+
 
 class FeatureExtractor:
     """Extract acoustic features from audio for AI detection."""
@@ -201,20 +207,82 @@ class FeatureExtractor:
     
     def detect_language(self, waveform: np.ndarray, sr: int) -> str:
         """
-        Language detection placeholder.
+        Detect language using speech recognition.
         
-        Note: Accurate language detection requires speech-to-text models.
-        The model is language-agnostic and works across all languages.
+        This uses Google Speech Recognition API to attempt transcription
+        in multiple languages and identifies which one succeeds.
         
         Args:
             waveform: Audio waveform
             sr: Sample rate
             
         Returns:
-            'multilingual' - indicating the model works across languages
+            Detected language (tamil, hindi, telugu, malayalam, bengali, english, etc.)
         """
-        # The voice detection model is language-agnostic
-        # It analyzes acoustic features that work across all languages
-        return "multilingual"
+        if not SPEECH_RECOGNITION_AVAILABLE:
+            return "multilingual"
+        
+        try:
+            import io
+            import soundfile as sf
+            
+            # Convert to mono if stereo
+            if len(waveform.shape) > 1:
+                waveform = waveform.mean(axis=1)
+            
+            # Convert waveform to WAV format for speech recognition
+            wav_buffer = io.BytesIO()
+            sf.write(wav_buffer, waveform, sr, format='WAV', subtype='PCM_16')
+            wav_buffer.seek(0)
+            
+            # Initialize recognizer
+            recognizer = speech_recognition.Recognizer()
+            
+            # Load audio
+            with speech_recognition.AudioFile(wav_buffer) as source:
+                # Record only first 5 seconds for faster processing
+                audio_data = recognizer.record(source, duration=5)
+            
+            # Language codes to try (reordered for better accuracy)
+            # Try more specific languages first, then broader ones
+            language_attempts = [
+                ('ta-IN', 'tamil'),
+                ('te-IN', 'telugu'),
+                ('ml-IN', 'malayalam'),
+                ('kn-IN', 'kannada'),
+                ('bn-IN', 'bengali'),
+                ('gu-IN', 'gujarati'),
+                ('mr-IN', 'marathi'),
+                ('pa-IN', 'punjabi'),
+                ('en-US', 'english'),
+                ('en-IN', 'english'),
+                ('hi-IN', 'hindi'),  # Hindi last as it's more permissive
+                ('ur-IN', 'urdu'),
+            ]
+            
+            # Try each language
+            for lang_code, lang_name in language_attempts:
+                try:
+                    # Attempt recognition with this language
+                    text = recognizer.recognize_google(audio_data, language=lang_code)
+                    
+                    # If successful and got meaningful text, return this language
+                    if text and len(text.strip()) > 0:
+                        return lang_name
+                        
+                except speech_recognition.UnknownValueError:
+                    # This language didn't work, try next
+                    continue
+                except speech_recognition.RequestError:
+                    # API error, fall back to multilingual
+                    break
+            
+            # If no language worked, return multilingual
+            return "multilingual"
+            
+        except Exception as e:
+            # If anything fails, return multilingual
+            # The model still works regardless of language
+            return "multilingual"
 
 

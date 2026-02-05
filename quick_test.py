@@ -40,11 +40,15 @@ def test_model(audio_file: str):
     print("\n🤖 Classifying...")
     classification, confidence, feature_importances = classifier.predict(feature_vector)
     
+    # Detect language
+    language = feature_extractor.detect_language(waveform, sr)
+    
     print("\n" + "=" * 60)
     print("📋 RESULTS")
     print("=" * 60)
     print(f"Classification: {classification}")
     print(f"Confidence: {confidence*100:.2f}%")
+    print(f"Language: {language}")
     
     explanation = classifier.generate_explanation(
         classification, confidence, features, feature_importances
