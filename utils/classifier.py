@@ -172,49 +172,111 @@ class VoiceClassifier:
         
         explanations = []
         
+        # Generate specific explanations based on classification and features
         for feature_name, importance in sorted_features:
             feature_value = features.get(feature_name, 0.0)
             
             if 'pitch' in feature_name:
-                if feature_value < 500:
-                    explanations.append("unnaturally stable pitch")
-                else:
-                    explanations.append("natural pitch variation")
+                if classification == "AI_GENERATED":
+                    if feature_value < 300:
+                        explanations.append("extremely stable pitch (robotic)")
+                    elif feature_value < 600:
+                        explanations.append("unnaturally consistent pitch patterns")
+                    else:
+                        explanations.append("limited pitch variation")
+                else:  # HUMAN
+                    if feature_value > 800:
+                        explanations.append("highly expressive pitch variation")
+                    elif feature_value > 500:
+                        explanations.append("natural pitch fluctuations")
+                    else:
+                        explanations.append("moderate pitch variation")
             
             elif 'pause' in feature_name:
-                if feature_value < 0.2:
-                    explanations.append("low pause variability")
-                else:
-                    explanations.append("natural pause patterns")
+                if classification == "AI_GENERATED":
+                    if feature_value < 0.15:
+                        explanations.append("mechanically regular pauses")
+                    elif feature_value < 0.25:
+                        explanations.append("overly consistent pause timing")
+                    else:
+                        explanations.append("predictable pause patterns")
+                else:  # HUMAN
+                    if feature_value > 0.35:
+                        explanations.append("irregular, natural pauses")
+                    elif feature_value > 0.25:
+                        explanations.append("varied pause timing")
+                    else:
+                        explanations.append("natural breathing patterns")
             
             elif 'spectral_flatness' in feature_name:
-                if feature_value > 0.3:
-                    explanations.append("smooth spectral characteristics")
-                else:
-                    explanations.append("natural spectral variation")
+                if classification == "AI_GENERATED":
+                    if feature_value > 0.35:
+                        explanations.append("artificially smooth frequency distribution")
+                    elif feature_value > 0.25:
+                        explanations.append("synthetic spectral characteristics")
+                    else:
+                        explanations.append("processed audio signature")
+                else:  # HUMAN
+                    if feature_value < 0.2:
+                        explanations.append("rich harmonic content")
+                    elif feature_value < 0.3:
+                        explanations.append("natural spectral complexity")
+                    else:
+                        explanations.append("organic frequency patterns")
             
             elif 'energy' in feature_name:
-                if feature_value < 0.005:
-                    explanations.append("consistent energy levels")
-                else:
-                    explanations.append("natural energy fluctuation")
+                if classification == "AI_GENERATED":
+                    if feature_value < 0.003:
+                        explanations.append("unnaturally stable volume")
+                    elif feature_value < 0.007:
+                        explanations.append("consistent energy levels")
+                    else:
+                        explanations.append("controlled amplitude")
+                else:  # HUMAN
+                    if feature_value > 0.01:
+                        explanations.append("dynamic volume changes")
+                    elif feature_value > 0.005:
+                        explanations.append("natural energy variation")
+                    else:
+                        explanations.append("subtle volume fluctuations")
             
             elif 'zcr' in feature_name:
-                if feature_value < 0.005:
-                    explanations.append("uniform zero-crossing patterns")
-                else:
-                    explanations.append("natural zero-crossing variation")
+                if classification == "AI_GENERATED":
+                    if feature_value < 0.04:
+                        explanations.append("uniform waveform patterns")
+                    else:
+                        explanations.append("synthetic signal characteristics")
+                else:  # HUMAN
+                    if feature_value > 0.06:
+                        explanations.append("complex waveform structure")
+                    else:
+                        explanations.append("natural signal variation")
         
-        # Build final explanation
+        # Build final explanation with confidence-based intro
         if classification == "AI_GENERATED":
-            base = "Analysis indicates synthetic speech patterns: "
+            if confidence > 0.9:
+                base = "Strong indicators of AI-generated speech detected: "
+            elif confidence > 0.7:
+                base = "Analysis suggests synthetic voice patterns: "
+            else:
+                base = "Possible AI-generated characteristics: "
+        else:  # HUMAN
+            if confidence < 0.1:
+                base = "Clear human speech characteristics: "
+            elif confidence < 0.3:
+                base = "Strong indicators of human voice: "
+            else:
+                base = "Analysis suggests human speech: "
+        
+        # Add specific explanations
+        if explanations:
+            explanation = base + ", ".join(explanations) + "."
         else:
-            base = "Analysis indicates human speech patterns: "
-        
-        explanation = base + ", ".join(explanations) + "."
-        
-        # Capitalize first letter
-        explanation = explanation[0].upper() + explanation[1:]
+            # Fallback if no specific explanations
+            if classification == "AI_GENERATED":
+                explanation = "Analysis indicates synthetic speech patterns based on acoustic features."
+            else:
+                explanation = "Analysis indicates human speech patterns based on acoustic features."
         
         return explanation
     

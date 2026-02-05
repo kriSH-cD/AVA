@@ -35,12 +35,13 @@ class VoiceDetectionResponse:
     language: str = "unknown"  # Detected language
     
     def to_dict(self) -> dict:
-        """Convert to dictionary."""
+        """Convert to dictionary with required format."""
         return {
+            "status": "success",
+            "language": self.language.capitalize() if self.language else "Unknown",
             "classification": self.classification,
-            "confidence": round(self.confidence, 2),
-            "explanation": self.explanation,
-            "language": self.language
+            "confidenceScore": round(self.confidence, 2),
+            "explanation": self.explanation
         }
 
 

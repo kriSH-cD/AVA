@@ -243,39 +243,68 @@ class FeatureExtractor:
                 # Record only first 5 seconds for faster processing
                 audio_data = recognizer.record(source, duration=5)
             
-            # Language codes to try (reordered for better accuracy)
-            # Try more specific languages first, then broader ones
+            # Language codes to try
             language_attempts = [
-                ('ta-IN', 'tamil'),
-                ('te-IN', 'telugu'),
-                ('ml-IN', 'malayalam'),
-                ('kn-IN', 'kannada'),
-                ('bn-IN', 'bengali'),
-                ('gu-IN', 'gujarati'),
-                ('mr-IN', 'marathi'),
-                ('pa-IN', 'punjabi'),
-                ('en-US', 'english'),
-                ('en-IN', 'english'),
-                ('hi-IN', 'hindi'),  # Hindi last as it's more permissive
-                ('ur-IN', 'urdu'),
+                ('en-US', 'english', 'en'),
+                ('hi-IN', 'hindi', 'hi'),
+                ('ta-IN', 'tamil', 'ta'),
+                ('te-IN', 'telugu', 'te'),
+                ('ml-IN', 'malayalam', 'ml'),
+                ('kn-IN', 'kannada', 'kn'),
+                ('bn-IN', 'bengali', 'bn'),
+                ('gu-IN', 'gujarati', 'gu'),
+                ('mr-IN', 'marathi', 'mr'),
+                ('pa-IN', 'punjabi', 'pa'),
+                ('ur-IN', 'urdu', 'ur'),
             ]
             
-            # Try each language
-            for lang_code, lang_name in language_attempts:
+            # Try all languages and collect successful transcriptions
+            transcriptions = {}
+            for lang_code, lang_name, lang_detect_code in language_attempts:
                 try:
-                    # Attempt recognition with this language
                     text = recognizer.recognize_google(audio_data, language=lang_code)
-                    
-                    # If successful and got meaningful text, return this language
                     if text and len(text.strip()) > 0:
-                        return lang_name
-                        
+                        transcriptions[lang_name] = (text, lang_detect_code)
                 except speech_recognition.UnknownValueError:
-                    # This language didn't work, try next
                     continue
                 except speech_recognition.RequestError:
-                    # API error, fall back to multilingual
                     break
+            
+            # If we got transcriptions, use langdetect to find the best match
+            if transcriptions:
+                try:
+                    from langdetect import detect
+                    
+                    # Try to detect language from each transcription
+                    best_match = None
+                    best_confidence = 0
+                    
+                    for lang_name, (text, expected_code) in transcriptions.items():
+                        try:
+                            detected_lang = detect(text)
+                            # If detected language matches expected, this is likely correct
+                            if detected_lang == expected_code:
+                                return lang_name
+                            # For English, also check if it's romanized version
+                            elif lang_name == 'english' and detected_lang == 'en':
+                                best_match = lang_name
+                                best_confidence = 1
+                        except:
+                            continue
+                    
+                    # If we found a confident match, return it
+                    if best_match and best_confidence > 0:
+                        return best_match
+                    
+                    # Otherwise, return the first successful transcription
+                    # (prefer specific Indian languages over English for Indian audio)
+                    for lang_name in ['tamil', 'hindi', 'telugu', 'malayalam', 'kannada', 'bengali', 'gujarati', 'marathi', 'punjabi', 'urdu', 'english']:
+                        if lang_name in transcriptions:
+                            return lang_name
+                            
+                except ImportError:
+                    # langdetect not available, return first successful
+                    return list(transcriptions.keys())[0]
             
             # If no language worked, return multilingual
             return "multilingual"
