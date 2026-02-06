@@ -12,10 +12,10 @@ class VoiceDetectionRequest:
     @classmethod
     def from_dict(cls, data: dict):
         """Create from dictionary with validation."""
-        audio_base64 = data.get('audio_base64', '')
+        audio_base64 = data.get('audioBase64', '')
         
         if not audio_base64:
-            raise ValueError("audio_base64 is required")
+            raise ValueError("audioBase64 is required")
         
         # Validate base64
         try:
